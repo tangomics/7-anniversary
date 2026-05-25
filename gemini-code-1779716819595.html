@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tang Zhen & Zhang Fan - 7th Anniversary</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poiret+One&family=Arapey:ital@0;1&family=Noto+Sans+SC:wght@100;300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d1117; 
+            --text-color: #f0f6fc;
+            --accent-color: #f7a8c5; 
+            --accent-color-2: #fff5e1; 
+            --heart-color: #ff3e41;
+            --font-display: 'Poiret One', cursive;
+            --font-serif: 'Arapey', serif;
+            --font-sans: 'Noto Sans SC', sans-serif;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            overflow: hidden;
+            font-family: var(--font-sans);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        #stars-canvas, #fireworks-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #stars-canvas {
+            z-index: 1;
+        }
+
+        #fireworks-canvas {
+            z-index: 2;
+        }
+
+        .content-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            text-align: center;
+            color: var(--text-color);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .title-group {
+            animation: fadeInDown 2s ease-out;
+            width: 100%;
+        }
+
+        h1.names {
+            font-family: var(--font-display);
+            font-size: clamp(1.8rem, 4.5vw, 5rem);
+            margin: 0;
+            font-weight: 300;
+            letter-spacing: clamp(4px, 1vw, 12px); 
+            color: var(--accent-color);
+            text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(247, 168, 197, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap; 
+        }
+
+        .heart {
+            color: var(--heart-color);
+            display: inline-block;
+            animation: heartbeat 1.5s infinite;
+            margin: 0 15px;
+            font-size: 0.85em; 
+            line-height: 1;
+        }
+
+        h2.date {
+            font-family: var(--font-serif);
+            font-size: 2.2rem;
+            margin: 30px 0 10px;
+            font-weight: 300;
+            color: var(--accent-color-2);
+            font-style: italic;
+            border-bottom: 1px solid rgba(255, 245, 225, 0.3);
+            padding-bottom: 15px;
+        }
+
+        .details-group {
+            animation: fadeInUp 2.5s ease-out;
+            opacity: 0.9;
+        }
+
+        p.message {
+            font-family: var(--font-serif);
+            font-size: clamp(1rem, 2.5vw, 1.4rem);
+            font-style: italic;
+            font-weight: 300;
+            color: rgba(240, 246, 252, 0.95);
+            letter-spacing: 2px;
+            margin: 25px 0 0;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        p.info {
+            font-family: var(--font-sans);
+            font-size: 0.8rem;
+            margin-top: 50px;
+            opacity: 0.4;
+            letter-spacing: 1px;
+        }
+
+        @keyframes fadeInDown {
+            0% { opacity: 0; transform: translateY(-40px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(40px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            14% { transform: scale(1.15); }
+            28% { transform: scale(1); }
+            42% { transform: scale(1.15); }
+            70% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="stars-canvas"></canvas>
+    <canvas id="fireworks-canvas"></canvas>
+
+    <div class="content-container">
+        <div class="title-group">
+            <h1 class="names">Tang Zhen <span class="heart">♥</span> Zhang Fan</h1>
+        </div>
+        <div class="details-group">
+            <h2 class="date">7th Anniversary of Our Love</h2>
+            <p class="message">United by love profound, We grow in joy unbound.</p>
+            <p class="info">(点击屏幕任意位置可燃放烟花)</p>
+        </div>
+    </div>
+
+    <script>
+        // --- 星空背景 Canvas ---
+        const starsCanvas = document.getElementById('stars-canvas');
+        const sCtx = starsCanvas.getContext('2d');
+        
+        let sWidth, sHeight;
+        let stars = [];
+
+        function resizeStars() {
+            sWidth = starsCanvas.width = window.innerWidth;
+            sHeight = starsCanvas.height = window.innerHeight;
+            generateStars();
+        }
+        window.addEventListener('resize', resizeStars);
+
+        function generateStars() {
+            stars = [];
+            const count = Math.floor(sWidth * sHeight / 1000);
+            for (let i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * sWidth,
+                    y: Math.random() * sHeight,
+                    radius: Math.random() * 1.2,
+                    opacity: Math.random() * 0.8 + 0.1,
+                    speed: Math.random() * 0.05 + 0.01
+                });
+            }
+        }
+
+        function drawStars() {
+            sCtx.clearRect(0, 0, sWidth, sHeight);
+            stars.forEach(star => {
+                sCtx.beginPath();
+                sCtx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                sCtx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                sCtx.fill();
+                
+                star.y -= star.speed;
+                star.opacity += (Math.random() - 0.5) * 0.02;
+                if (star.opacity < 0.1) star.opacity = 0.1;
+                if (star.opacity > 0.9) star.opacity = 0.9;
+                
+                if (star.y < 0) {
+                    star.y = sHeight;
+                    star.x = Math.random() * sWidth;
+                }
+            });
+            requestAnimationFrame(drawStars);
+        }
+
+        resizeStars();
+        drawStars();
+
+        // --- 烟花主 Canvas ---
+        const canvas = document.getElementById('fireworks-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let fireworks = [];
+        let particles = [];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Firework {
+            constructor(startX, startY, targetX, targetY) {
+                this.x = startX;
+                this.y = startY;
+                this.targetX = targetX;
+                this.targetY = targetY;
+                this.distanceToTarget = this.calculateDistance(startX, startY, targetX, targetY);
+                this.distanceTraveled = 0;
+                this.coordinates = [];
+                this.coordinateCount = 3;
+                while (this.coordinateCount--) {
+                    this.coordinates.push([this.x, this.y]);
+                }
+                this.angle = Math.atan2(targetY - startY, targetX - startX);
+                this.speed = Math.random() * 6 + 10;
+                this.acceleration = 1.03;
+                this.friction = 0.98;
+                this.gravity = 0.1;
+                this.hue = Math.random() * 360;
+                this.brightness = Math.random() * 30 + 70;
+                this.color = `hsla(${this.hue}, 100%, ${this.brightness}%, 0.8)`;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.015 + 0.03;
+                this.trailWidth = Math.random() * 1.5 + 1;
+            }
+
+            calculateDistance(x1, y1, x2, y2) {
+                const xDistance = x1 - x2;
+                const yDistance = y1 - y2;
+                return Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2));
+            }
+
+            update() {
+                this.coordinates.pop();
+                this.coordinates.unshift([this.x, this.y]);
+                
+                this.speed *= this.acceleration;
+                this.speed *= this.friction;
+                
+                const vx = Math.cos(this.angle) * this.speed;
+                const vy = Math.sin(this.angle) * this.speed;
+                
+                this.x += vx;
+                this.y += vy;
+                
+                this.alpha -= this.decay / 2;
+                this.distanceTraveled = this.calculateDistance(this.x, this.y, this.targetX, this.targetY);
+                
+                if (this.distanceTraveled <= this.speed || this.alpha <= 0.1) {
+                    this.explode();
+                    return true;
+                }
+                return false;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.moveTo(this.coordinates[this.coordinates.length - 1][0], this.coordinates[this.coordinates.length - 1][1]);
+                ctx.lineTo(this.x, this.y);
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = this.trailWidth;
+                ctx.stroke();
+            }
+
+            explode() {
+                const particleCount = Math.floor(Math.random() * 80 + 120);
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push(new Particle(this.x, this.y, this.hue));
+                }
+            }
+        }
+
+        class Particle {
+            constructor(x, y, hue) {
+                this.x = x;
+                this.y = y;
+                this.hue = hue;
+                this.coordinates = [];
+                this.coordinateCount = 5;
+                while (this.coordinateCount--) {
+                    this.coordinates.push([this.x, this.y]);
+                }
+                this.angle = Math.random() * Math.PI * 2;
+                this.speed = Math.random() * 8 + 2;
+                this.friction = 0.95;
+                this.gravity = 0.6;
+                this.decay = Math.random() * 0.015 + 0.003;
+                this.alpha = 1;
+                this.size = Math.random() * 2 + 1.5;
+            }
+
+            update() {
+                this.coordinates.pop();
+                this.coordinates.unshift([this.x, this.y]);
+                
+                this.speed *= this.friction;
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed + this.gravity;
+                this.alpha -= this.decay;
+                
+                if (this.alpha <= 0.1) {
+                    return true;
+                }
+                return false;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.moveTo(this.coordinates[this.coordinates.length - 1][0], this.coordinates[this.coordinates.length - 1][1]);
+                ctx.lineTo(this.x, this.y);
+                ctx.strokeStyle = `hsla(${this.hue}, 100%, 60%, ${this.alpha})`;
+                ctx.lineWidth = this.size;
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${this.hue}, 100%, 90%, ${this.alpha})`;
+                ctx.fill();
+            }
+        }
+
+        function loop() {
+            requestAnimationFrame(loop);
+            
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillStyle = 'rgba(13, 17, 23, 0.3)';
+            ctx.fillRect(0, 0, width, height);
+            
+            ctx.globalCompositeOperation = 'lighter';
+
+            if (Math.random() < 0.02) {
+                const startX = Math.random() * width;
+                const startY = height;
+                const targetX = startX + (Math.random() - 0.5) * (width * 0.4);
+                const targetY = Math.random() * height * 0.6;
+                fireworks.push(new Firework(startX, startY, targetX, targetY));
+            }
+
+            for (let i = fireworks.length - 1; i >= 0; i--) {
+                const exploded = fireworks[i].update();
+                fireworks[i].draw();
+                if (exploded) fireworks.splice(i, 1);
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const vanished = particles[i].update();
+                particles[i].draw();
+                if (vanished) particles.splice(i, 1);
+            }
+        }
+
+        window.addEventListener('mousedown', (e) => {
+            const startX = width / 2;
+            const startY = height;
+            const targetX = e.clientX;
+            const targetY = e.clientY;
+            fireworks.push(new Firework(startX, startY, targetX, targetY));
+        });
+
+        window.addEventListener('touchstart', (e) => {
+            const startX = width / 2;
+            const startY = height;
+            const targetX = e.touches[0].clientX;
+            const targetY = e.touches[0].clientY;
+            fireworks.push(new Firework(startX, startY, targetX, targetY));
+        });
+
+        loop();
+    </script>
+</body>
+</html>
